@@ -1,0 +1,26 @@
+gcc -c -o obj/data.o data.c -O3 -g
+gcc -c -o obj/setup.o setup.c -O3 -g
+gcc -c -o obj/vtk.o vtk.c -O3 -g
+gcc -c -o obj/boundary.o boundary.c -O3 -g
+gcc -c -o obj/md.o md.c -O3 -g
+gcc -o md obj/args.o obj/data.o obj/setup.o obj/vtk.o obj/boundary.o obj/md.o -O3 -lm -g
+
+
+
+profiling enabled:
+gcc -c -o obj/data.o data.c -O3 -pg
+gcc -c -o obj/setup.o setup.c -O3 -pg
+gcc -c -o obj/vtk.o vtk.c -O3 -pg
+gcc -c -o obj/boundary.o boundary.c -O3 -pg
+gcc -c -o obj/md.o md.c -O3 -pg
+gcc -o md obj/args.o obj/data.o obj/setup.o obj/vtk.o obj/boundary.o obj/md.o -O3 -lm -pg
+
+
+
+profiling enabled with omp:
+gcc -c -o obj/data.o data.c -O3 -fopenmp -pg
+gcc -c -o obj/setup.o setup.c -O3 -fopenmp -pg
+gcc -c -o obj/vtk.o vtk.c -O3 -fopenmp -pg
+gcc -c -o obj/boundary.o boundary.c -O3 -fopenmp -pg
+gcc -c -o obj/md.o md.c -O3 -fopenmp -pg
+gcc -o md obj/args.o obj/data.o obj/setup.o obj/vtk.o obj/boundary.o obj/md.o -O3 -lm -fopenmp -pg

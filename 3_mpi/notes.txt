@@ -1,0 +1,17 @@
+Work has been split between each process
+
+2 Halo exchanges: 1 right after move_particles, 1 right after update_cells
+
+update_cells also updates 1 row above and below (the ghost rows) its working set of rows.
+This is because they may contain particles in their cells that are moving into the processes
+Working set of rows. This way those particles can be included in the calculations after moving
+Outside of the previous processes working space.
+
+Had to modify the cell_list struct so the particles array is always length 10 instead of dynamic.
+This makes the halo exchange easier as it will send the same number of bytes each time, rather
+than a varying number of bytes if the particles list was dynamic. Obviously this brings the issue
+of the program not working if more than 10 particles are ever in a cell at the same time, but with
+the default settings of 500x500 with a seed of 1, this does not happen and I have not had this happen
+on any other seed so far.
+This modified cell_list struct also made the add_particle and remove_particles functions significantly
+simpler.

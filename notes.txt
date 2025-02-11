@@ -1,0 +1,62 @@
+initial code optimisations:
+
+changed the linked list to a 2d array of cell_list structs:
+    - changed the cell_list and particle_t structs
+    - changed the alloc_2d_cell_list_array function:
+        - stores the 2d array in memory in a more standard (but not contiguous) fashion (I think it will be easier to work with,
+          and seems to have the same performance as the old way)
+    - changed add_particle:
+        - increment num_particles member
+        - allocates new memory for the increased array size (using malloc)
+        - put the new particle at the first element and all old particles after (this 
+          is more computation than the old linked list method)
+        - free the old memory location
+    - changed remove_particle:
+        - decrement num_particles member
+        - if num_particles is 0, free particle list and calloc (to make sure its zero'd) 
+          new memory for 1 particle
+        - otherwise shift everything after the index of the particle to remove down (to 
+          the left) one time. This overwrites the particle to be removed and retains the order
+          of the particles. (this is more computation than the old linked list method)
+        - realloc the memory for the decreased array size
+
+    - in update_cell, when removing a particle from a cell, the particles in the list get
+      shifted down, and the k iterator value gets incremented at the end of the loop iteration,
+      resulting in the potential of a particle getting skipped.
+    - To make update_cell work properly with the 2d array and new add and remove particle 
+      methods I had to swap the order the methods are called so add_particle comes first.
+
+gprof showed the program spent most of it's time in comp_accel.
+
+Eliminate common sub-expressions in comp_accel:
+    - in '((i-1) * cell_size) + p->x' and 3 the other similar calculations, the first part
+      '(i-1) * cell_size' was moved to just inside the i loop. (the same for the others too.)
+    - p_real_x and p_real_y calculations were also moved outside the loop to just after p
+      was created.
+
+After these changes, the code takes about ~220 seconds to complete
+
+Using the simplified version (with set length particles array in cell_list) is a bit quicker I think,
+but is not as general of a solution as the dynamic length array.
+
+
+
+
+OpenMP changes:
+
+Since most of the program's time spent is in the comp_accel function, most of the performance
+gains comes from parallelizing the 6 times nested for loop inside this function.
+
+- I added #pragma omp parallel for reduction(+:pot_energy). This only parallelizes the outermost loop.
+  I tried adding 'collapse(2)' (since the most I can collapse is the two outermost loops), but it didn't
+  improve the performance, if anything it slowed it down slightly. This loop parallelizes well as the only
+  shared variable between each thread is 'pot_energy' which just needs to be summed.
+
+- I added '#pragma omp parallel for' to most other loops in the code where possible which helped bring
+  down the processing time even further.
+
+- By trial and error I found the optimal number of threads with my code was about 32. Higher
+  than this and it starting slowing down at the ~500 iteration point (which I think is roughly
+  where particles start moving between cells).
+
+- Profiling with gprof doesn't work too well with omp code.
